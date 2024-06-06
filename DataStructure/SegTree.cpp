@@ -1,5 +1,6 @@
 ﻿#include <vector>
 #include <functional>
+#include <cassert>
 using namespace std;
 
 template<typename T>

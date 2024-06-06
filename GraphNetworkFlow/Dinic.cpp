@@ -4,6 +4,11 @@
 // verify
 // https://atcoder.jp/contests/abc259/tasks/abc259_g
 
+#include <iostream>
+#include <queue>
+#include <vector>
+using namespace std;
+
 template<class FLOWTYPE>
 struct FlowEdge {
     int rev, from, to;
