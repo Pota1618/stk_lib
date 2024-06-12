@@ -1,4 +1,4 @@
-﻿#include <vector>
+#include <vector>
 #include <functional>
 #include <atcoder/fenwicktree.hpp>
 
@@ -32,7 +32,7 @@ namespace DoubleSigma {
 		return left;
 	}
 
-	// O(N * maxA * log(maxA))
+	// O(N * √maxA * log(maxA))
 	template<class T = long long>
 	T XmodY(const vector<T>& A) {
 		T max_a = *max_element(all(A));
@@ -63,7 +63,7 @@ namespace DoubleSigma {
 		return ans;
 	}
 
-	// O(N * maxA * log(maxA))
+	// O(N + maxA * log(maxA))
 	template<class T = long long>
 	T FloorAllPairs(const vector<T>& A) {
 		const T max_a = *max_element(A.begin(), A.end());

@@ -1,4 +1,4 @@
-﻿#include <vector>
+#include <vector>
 #include <functional>
 #include <cassert>
 using namespace std;
@@ -29,7 +29,7 @@ public:
 	LazySegTree(const vector<S>& A, function<S(S, S)> op, S e, function<S(F, S)> mapping, function<F(F, F)> composition, function<F(F, int)> power, F id)
 		: N((int)A.size()), op(op), e(e), mapping(mapping), composition(composition), power(power), id(id), log(0)
 	{
-		while (N > (1 << log)) ++log;
+        while (N > (1 << log)) ++log;
 		sz = 1 << log;
 		data.assign(sz << 1, e);
 		lazy.assign(sz, id);
@@ -60,7 +60,7 @@ public:
 		assert(0 <= l && l <= N && 0 <= r && r <= N);
 		if (l == r) return e;
 
-		l += sz, r += sz;
+        l += sz; r += sz;
 
 		for (int i = log; i >= 1; --i) {
 			if (((l >> i) << i) != l) Propagate(l >> i);
@@ -71,7 +71,7 @@ public:
 		while (l < r) {
 			if (l & 1) res_l = op(data[l++], res_l);
 			if (r & 1) res_r = op(res_r, data[--r]);
-			l >>= 1, r >>= 1;
+            l >>= 1; r >>= 1;
 		}
 
 		return op(res_r, res_l);
@@ -91,7 +91,7 @@ public:
 		assert(0 <= l && l <= N && 0 <= r && r <= N);
 		if (l == r) return;
 
-		l += sz, r += sz;
+        l += sz; r += sz;
 
 		for (int i = log; i >= 1; --i) {
 			if (((l >> i) << i) != l) Propagate(l >> i);
@@ -103,9 +103,9 @@ public:
 			while (l < r) {
 				if (l & 1) MappingToCell(l++, f);
 				if (r & 1) MappingToCell(--r, f);
-				l >>= 1, r >>= 1;
+                l >>= 1; r >>= 1;
 			}
-			l = l2, r = r2;
+            l = l2; r = r2;
 		}
 
 		for (int i = 1; i <= log; ++i) {
