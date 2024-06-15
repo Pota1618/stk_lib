@@ -112,24 +112,60 @@ namespace DoubleSigma {
 	}
 } // namespace DoubleSigma
 
-/*
-bool test(int num_tests) {
-	using VT = long long;
+template<typename T>
+class DoubleSigmaVerifier {
+	int NT, N;
+public:
+	DoubleSigmaVerifier(int NT, int N)
+		: N(N), NT(NT) {}
 
-	rep(ti, num_tests) {
-		vector<VT> A;
-		rep(i, 1000) A.emplace_back(rand() % 1000 + 1);
-		function<VT(VT, VT)> op = [](VT a, VT b) -> VT { return a % b; };
-
-		VT ans1 = BruteForce(A, op);
-		VT ans2 = XmodY(A);
-
-		if (ans1 != ans2) {
-			__debugbreak();
-			return false;
+	bool verify(function<T(const vector<T>&)> bf, function<T(const vector<T>&)> f, string f_name = "The function") {
+		for (int i = 0; i < NT; ++i) {
+			vector<T> A(N);
+			for (auto& a : A) {
+				a = rand() % 1000 + 1;
+			}
+			if (f(A) != bf(A)) {
+				for (auto a : A) cout << a << " ";
+				cout << endl;
+				return false;
+			}
 		}
+
+		cout << f_name << " seems to be fine!\n";
+		return true;
 	}
-	cout << "Yes!\n";
-	return true;
-}
-*/
+
+	template<T(*op)(T, T)>
+	static T BruteForce(const vector<T>& A) {
+		T res = 0;
+		for (int i = 0; i < A.size() - 1; ++i) {
+			for (int j = i + 1; j < A.size(); ++j) {
+				res += op(A[i], A[j]);
+			}
+		}
+		return res;
+	}
+
+	template<T(*op)(T, T)>
+	static T BruteForceAllPairs(const vector<T>& A) {
+		T res = 0;
+		for (int i = 0; i < A.size(); ++i) {
+			for (int j = 0; j < A.size(); ++j) {
+				if (i == j) continue;
+				res += op(A[i], A[j]);
+			}
+		}
+		return res;
+	}
+};
+
+//ll FloorXoverY(ll x, ll y) { return x / y; }
+//ll XmodY(ll x, ll y) { return x % y; }
+//
+//int main() {
+//	DoubleSigmaVerifier<ll> dv(100, 1000);
+//	dv.verify(dv.BruteForce<FloorXoverY>, DoubleSigma::FloorXoverY<ll>, "XoverY");
+//	dv.verify(dv.BruteForceAllPairs<FloorXoverY>, DoubleSigma::FloorAllPairs<ll>, "XoverYAll");
+//	dv.verify(dv.BruteForce<XmodY>, DoubleSigma::XmodY<ll>, "XmodY");
+//}
