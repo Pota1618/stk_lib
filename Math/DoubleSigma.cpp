@@ -1,6 +1,11 @@
+// https://shakayami.hatenablog.com/entry/2021/01/01/044946#%E6%9C%80%E5%B0%8F%E5%85%AC%E5%80%8D%E6%95%B0fxylcmxy-AGC038-C
+
+#include <iostream>
 #include <vector>
 #include <functional>
+
 #include <atcoder/fenwicktree.hpp>
+#include <atcoder/modint.hpp>
 
 using namespace std;
 
@@ -110,6 +115,40 @@ namespace DoubleSigma {
 		}
 		return ans;
 	}
+
+	template<class T = atcoder::modint998244353>
+	T XlcmY(const vector<int>& A) {
+		int maxA = *max_element(all(A));
+		PrimeFactorization pf(maxA);
+
+		vector<long long> cnt(maxA + 1);
+		for (auto a : A) cnt[a] += 1;
+
+		vector<T> W(maxA + 1);
+		vector<T> inv(maxA + 1);
+		for (int i = 1; i <= maxA; ++i) inv[i] = T::raw(i).inv();
+		for (int i = 1; i <= maxA; ++i) {
+			auto D = pf.Divisors(i, false);
+			W[i] = inv[i];
+			for (auto d : D) if (i != d) {
+				W[i] -= W[d];
+			}
+		}
+
+		T ans = 0;
+		for (int i = 1; i <= maxA; ++i) {
+			T s = 0;
+			for (int d = i; d <= maxA; d += i) {
+				s += cnt[d] * d;
+			}
+			ans += W[i] * s * s;
+		}
+		for (int i = 0; i < A.size(); ++i) ans -= A[i];
+		ans *= inv[2];
+
+		return ans;
+	}
+
 } // namespace DoubleSigma
 
 template<typename T>
