@@ -1,4 +1,4 @@
-﻿template<typename S>
+﻿template<class S, S(*op)(S, S), S(*e)()>
 class SplayArray {
 private:
 	struct SplayNode {
@@ -6,7 +6,7 @@ private:
 		int size, rev;
 		S value, prod;
 
-		SplayNode() : left(nullptr), right(nullptr), parent(nullptr), size(1), rev(0) {}
+		SplayNode() : left(nullptr), right(nullptr), parent(nullptr), size(1), rev(0), value(e()), prod(e()) {}
 
 		void rotate() {
 			SplayNode* pp, * p, * c;
@@ -41,7 +41,13 @@ private:
 		}
 
 		void splay() {
+			propagate();
 			while (this->state() != 0) {
+				SplayNode* pp = parent->parent;
+				SplayNode* p = parent;
+				if (pp) pp->propagate();
+				p->propagate();
+
 				if (this->parent->state() == 0) {
 					this->rotate();
 				}
@@ -53,6 +59,25 @@ private:
 					this->rotate();
 					this->rotate();
 				}
+
+				p->update();
+				update();
+			}
+			update();
+		}
+
+		void propagate() {
+			if (rev) {
+				swap(left, right);
+				if (left != nullptr) {
+					left->rev ^= 1; // 伝播
+					// reverse_prod(left->prod);
+				}
+				if (right != nullptr) {
+					right->rev ^= 1; // 伝播
+					// reverse_prod(right->prod);
+				}
+				rev = 0;
 			}
 		}
 
@@ -72,8 +97,6 @@ private:
 
 	SplayNode* root;
 	vector<SplayNode> A;
-	const inline static function<S(S, S)> op = [](int a, int b) { return min(a, b); };
-	const inline static S e = 0;
 
 public:
 	SplayArray(int N) : A(N) {
@@ -104,6 +127,14 @@ public:
 		return res;
 	}
 
+	void reverse(int l, int r) {
+		if (l >= r) return;
+		SplayNode* lroot, * mroot, * rroot;
+		tie(mroot, rroot) = split(r, root);
+		tie(lroot, mroot) = split(l, mroot);
+		mroot->rev ^= 1;
+		root = merge(merge(lroot, mroot), rroot);
+	}
 
 	// pop r, insert l
 	void shift(int l, int r) {
@@ -126,11 +157,12 @@ public:
 	}
 
 	S prod(int l, int r) {
+		if (l >= r) return e();
 		SplayNode* lroot, * mroot, * rroot;
-		auto tmp = split(r + 1, root);
+		auto tmp = split(r, root);
 		rroot = tmp.second;
 		tie(lroot, mroot) = split(l, tmp.first);
-		int res = mroot->prod;
+		S res = mroot->prod; // ここが int のままになってた。
 		root = merge(merge(lroot, mroot), rroot);
 		return res;
 	}
@@ -145,19 +177,23 @@ private:
 	SplayNode* get(int idx, SplayNode* node) {
 		SplayNode* now = node;
 		while (true) {
+			now->propagate();
+
 			int lsize = now->left ? now->left->size : 0;
 			if (idx < lsize) {
 				now = now->left;
 			}
 			if (idx == lsize) {
-				now->splay();
-				return now;
+				break;
 			}
 			if (idx > lsize) {
 				now = now->right;
 				idx = idx - lsize - 1;
 			}
 		}
+		now->propagate();
+		now->splay();
+		return now;
 	}
 
 	SplayNode* insert(int idx, SplayNode* node) {
@@ -189,49 +225,77 @@ private:
 	}
 };
 
-int AOJ_Volume15_1508_RMQ() {
-	int n, q; cin >> n >> q;
-	SplayArray<int> sp(n);
+string op_str(string a, string b) { return b + a; }
+string e_str() { return ""; }
 
-	for (int i = 0; i < n; ++i) {
-		int a; cin >> a;
-		sp.set(i, a);
-	}
-
-	for (int i = 0; i < q; ++i) {
-		int ord; cin >> ord;
-		if (ord == 0) {
-			int l, r; cin >> l >> r;
-			sp.shift(l, r);
-		}
-		if (ord == 1) {
-			int l, r; cin >> l >> r;
-			cout << sp.prod(l, r) << endl;
-		}
-		if (ord == 2) {
-			int pos, val; cin >> pos >> val;
-			sp.set(pos, val);
-		}
-	}
-	return 0;
-}
-
-void RangeShiftTest() {
+void RangeReverseTest() {
 	int N = 10;
-	SplayArray<int> sp(N);
-	rep(i, N) sp.set(i, i);
+	SplayArray<string, op_str, e_str> sp(N);
+	rep(i, N) sp.set(i, string(1, '0' + i));
 	rep(j, N)
 		cout << sp.get(j) << " "; cout << endl;
 	int W = 5;
 	for (int i = 0; i < N - W + 1; ++i) {
-		sp.shift(i, i + W, -3);
-		rep(j, N) cout << sp.get(j) << " "; cout << endl;
+		sp.reverse(i, i + W);
+		rep(j, N) cout << sp.get(j) << " "; cout << " : " << sp.prod(3, 7) << endl;
 	}
 	for (int i = N - W; i >= 0; --i) {
 		sp.shift(i, i + W, 3);
-		rep(j, N) cout << sp.get(j) << " "; cout << endl;
+		rep(j, N) cout << sp.get(j) << " "; cout << " : " << sp.prod(3, 7) << endl;
 	}
 }
+
+
+ll op(ll a, ll b) { return a + b; }
+ll e() { return 0; }
+
+void LibraryChecker_RangeReverseRangeSum() {
+	ll N, Q; cin >> N >> Q;
+	SplayArray<ll, op, e> sp(N);
+	rep(i, N) {
+		ll a; cin >> a;
+		sp.set(i, a);
+	}
+
+	while (Q--) {
+		ll t, l, r; cin >> t >> l >> r;
+		if (t == 0) {
+			sp.reverse(l, r);
+		}
+		else {
+			cout << sp.prod(l, r) << endl;
+		}
+	}
+}
+
+//int AOJ_Volume15_1508_RMQ() {
+//	int n, q; cin >> n >> q;
+//	SplayArray<int> sp(n);
+//
+//	for (int i = 0; i < n; ++i) {
+//		int a; cin >> a;
+//		sp.set(i, a);
+//	}
+//
+//	for (int i = 0; i < q; ++i) {
+//		int ord; cin >> ord;
+//		if (ord == 0) {
+//			int l, r; cin >> l >> r;
+//			sp.shift(l, r);
+//		}
+//		if (ord == 1) {
+//			int l, r; cin >> l >> r;
+//			cout << sp.prod(l, r) << endl;
+//		}
+//		if (ord == 2) {
+//			int pos, val; cin >> pos >> val;
+//			sp.set(pos, val);
+//		}
+//	}
+//	return 0;
+//}
+
+
 
 
 
