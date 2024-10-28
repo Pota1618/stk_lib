@@ -1,4 +1,18 @@
-﻿#include <vector>
+﻿// https://kopricky.github.io/code/DataStructure_OnGraph/hl_decomposition.html
+// https://ei1333.github.io/luzhiled/snippets/tree/heavy-light-decomposition.html // 現在のやつはこっちがベース
+// https://judge.yosupo.jp/problem/lca // LCA の実装が他のクエリ全てのベースなので、まずはここから
+// https://judge.yosupo.jp/problem/vertex_add_path_sum // fenwick tree を載せる練習
+// https://judge.yosupo.jp/problem/vertex_set_path_composite // 非可換なので面倒だけどなんとか path_prod() で AC
+// https://judge.yosupo.jp/problem/vertex_add_subtree_sum // EulerTour っぽいものを持っているのでやるだけ
+// https://atcoder.jp/contests/iroha2019-day2/tasks/iroha2019_day2_k // 木上の高速化に HLD, 列に対しては区間加算と区間代入を行うが、これは遅延セグ木に Affine を載せて 1x+C と 0x+C とすればよい
+
+// 辺上の合計クエリ。辺の子側の頂点に辺データを持たせて LCA 抜きで演算を行うと辺クエリになる。
+// 辺 id を取得する関数をコンストラクタに渡すと、edge_index が使えるようになりそのインデックスに辺データをセットすればよい。
+// https://atcoder.jp/contests/abc294/tasks/abc294_g 
+
+// https://atcoder.jp/contests/abc294 // 根を任意にするには、ちゃんと根の head を設定するとよさそう。
+
+#include <vector>
 #include <functional>
 
 using namespace std;

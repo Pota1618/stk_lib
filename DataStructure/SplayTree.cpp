@@ -246,27 +246,27 @@ void RangeReverseTest() {
 }
 
 
-ll op(ll a, ll b) { return a + b; }
-ll e() { return 0; }
-
-void LibraryChecker_RangeReverseRangeSum() {
-	ll N, Q; cin >> N >> Q;
-	SplayArray<ll, op, e> sp(N);
-	rep(i, N) {
-		ll a; cin >> a;
-		sp.set(i, a);
-	}
-
-	while (Q--) {
-		ll t, l, r; cin >> t >> l >> r;
-		if (t == 0) {
-			sp.reverse(l, r);
-		}
-		else {
-			cout << sp.prod(l, r) << endl;
-		}
-	}
-}
+//ll op(ll a, ll b) { return a + b; }
+//ll e() { return 0; }
+//
+//void LibraryChecker_RangeReverseRangeSum() {
+//	ll N, Q; cin >> N >> Q;
+//	SplayArray<ll, op, e> sp(N);
+//	rep(i, N) {
+//		ll a; cin >> a;
+//		sp.set(i, a);
+//	}
+//
+//	while (Q--) {
+//		ll t, l, r; cin >> t >> l >> r;
+//		if (t == 0) {
+//			sp.reverse(l, r);
+//		}
+//		else {
+//			cout << sp.prod(l, r) << endl;
+//		}
+//	}
+//}
 
 //int AOJ_Volume15_1508_RMQ() {
 //	int n, q; cin >> n >> q;

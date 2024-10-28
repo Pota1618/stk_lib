@@ -1,3 +1,6 @@
+// https://judge.yosupo.jp/submission/238886
+// https://atcoder.jp/contests/jag2013summer-day4
+
 #include <iostream>
 #include <bitset>
 #include <vector>
@@ -6,9 +9,6 @@
 
 using namespace std;
 using ll = long long;
-
-// https://judge.yosupo.jp/submission/238886
-// https://atcoder.jp/contests/jag2013summer-day4/submissions/42876075
 
 template<int M>
 class BitMatrix {
