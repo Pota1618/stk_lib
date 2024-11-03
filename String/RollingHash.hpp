@@ -41,7 +41,7 @@ public:
 		}
 
 		uint64_t Asull() const { return (h1 << 32) + h2; }
-		pair<int, int> AsPair() const { return make_pair(h1, h2); }
+		pair<int, int> AsPair() const { return make_pair((int)h1, (int)h2); }
 
 		bool operator==(const HashData& other) const { return length == other.length && h1 == other.h1 && h2 == other.h2; }
 		bool operator!=(const HashData& other) const { return !((*this) == other); }

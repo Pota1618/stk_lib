@@ -1,4 +1,9 @@
-﻿template<class S, S(*op)(S, S), S(*e)()>
+﻿#include <vector>
+#include <string>
+
+using namespace std;
+
+template<class S, S(*op)(S, S), S(*e)()>
 class SplayArray {
 private:
 	struct SplayNode {
@@ -225,6 +230,7 @@ private:
 	}
 };
 
+/*
 string op_str(string a, string b) { return b + a; }
 string e_str() { return ""; }
 
@@ -244,6 +250,7 @@ void RangeReverseTest() {
 		rep(j, N) cout << sp.get(j) << " "; cout << " : " << sp.prod(3, 7) << endl;
 	}
 }
+*/
 
 
 //ll op(ll a, ll b) { return a + b; }

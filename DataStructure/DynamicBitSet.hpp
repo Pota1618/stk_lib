@@ -41,6 +41,7 @@ public:
 	BitSet(const BitSet& other) : N(other.N) {
 		size_t asize = other.array_size();
 		A = (u64*)malloc(sizeof(u64) * asize);
+		assert(A != nullptr);
 		for (size_t i = 0; i < asize; ++i)
 			A[i] = other.A[i];
 	}
@@ -52,6 +53,7 @@ public:
 		N = other.N;
 		if (A) free(A);
 		A = (u64*)malloc(sizeof(u64) * other.array_size());
+		assert(A != nullptr);
 		for (size_t i = 0; i < other.array_size(); ++i)
 			A[i] = other.A[i];
 		return *this;
