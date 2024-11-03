@@ -62,8 +62,9 @@ public:
 	}
 };
 
-//【逆行列】O(n^3 / 64)
+// https://judge.yosupo.jp/problem/inverse_matrix_mod_2
 /*
+【逆行列】O(n^3 / 64)
 * n 次正方行列 A の逆行列を返す（存在しなければ空）
 */
 BitMatrix Inverse(const BitMatrix& A) {
@@ -108,8 +109,9 @@ BitMatrix Inverse(const BitMatrix& A) {
 	return invA;
 }
 
-//【行簡約階段形】O(n m min(n, m) / 64)
+// https://judge.yosupo.jp/problem/matrix_rank_mod_2
 /*
+【行簡約階段形】O(n m min(n, m) / 64)
 * 行基本変形で m×n 行列 A を行簡約階段形に変形し，rank A を返す（ピボットの上下は全て 0）
 * また変形後の第 i 行が元の第何行だったかを is[i] に，ピボットが第何列にあるかを js[i] に格納する．
 */
@@ -145,7 +147,14 @@ int ReducedRowEchelonFrom(BitMatrix& A, vector<int>* is = nullptr, vector<int>* 
 	return i;
 }
 
+
 // https://judge.yosupo.jp/problem/system_of_linear_equations_mod_2
+/*
+【線形方程式】O(n m min(n, m) / 64)
+* 与えられた n×m 行列 A と n 次元ベクトル b に対し，
+* 線形方程式 A x = b の特殊解 x0（m 次元ベクトル）を格納する（なければ false を返す）
+* また同次形 A x = 0 の解空間の基底（m 次元ベクトル）のリストを xs に格納する．
+*/
 int LinearEquations(const BitMatrix& A, const vector<bool> b, BitSet* x0 = nullptr, vector<BitSet>* sol_basis = nullptr) {
 	int n = A.height(), m = A.width();
 
