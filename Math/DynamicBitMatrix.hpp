@@ -5,7 +5,7 @@
 #include <numeric>
 #include <bit>
 
-// #include "stk_lib/DataStructure/DynamicBitSet"
+#include "stk_lib/DataStructure/DynamicBitSet.hpp"
 
 using namespace std;
 
