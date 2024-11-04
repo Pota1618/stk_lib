@@ -58,6 +58,34 @@ public:
 
 
 /*
+型と合成方法を与えると勝手にマージしてくれる UnionFind
+*/
+template<typename Data>
+class UnionFind_with_Data : public UnionFind {
+private:
+    vector<Data> data;
+    const function<Data(Data, Data)> op;
+public:
+    UnionFind_with_Data(const vector<Data>& A, const function<Data(Data, Data)>& op)
+    : UnionFind(A.size()), data(A), op(op) {}
+    
+    bool merge(int u, int v) {
+        u = leader(u);
+        v = leader(v);
+        if(u == v) return false;
+        
+        Data val = op(data[u], data[v]);
+        UnionFind::merge(u, v);
+        data[leader(u)] = val;
+        
+        return true;
+    }
+    
+    Data get(int v) { return data[leader(v)]; }
+};
+
+
+/*
 頂点が属する集合の要素を列挙できる UnionFind
 木構造ではなく配列をもってマージテクだけしているので
 merge はならし O(log N), leader も O(log N)
