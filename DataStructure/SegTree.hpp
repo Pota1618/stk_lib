@@ -59,4 +59,50 @@ public:
 		}
 		return op(res_r, res_l);
 	}
+	
+	T all_prod() const {
+		return data[1];
+	}
+	
+	// prod[l, l+1, ... r) が ok となるような最大の r を返す
+	// 条件を満たす最大の r を返す二分探索
+	// l == N の場合は、区間の長さが 0 なので、N を返す。単位元が条件を満たすことを要求する。
+	int binary_search(int l, const function<bool(T)>& ok) {
+		assert(0 <= l && l <= N);
+		assert(ok(e) == true);
+		if(l == N) return N;
+		
+		l += data_size;
+		T product = e;
+		
+		do {
+			// 左端が変わらないようにできるだけ親に上る。
+			while(l % 2 == 0) l >>= 1;
+			
+			// 右に伸ばしすぎのパターン
+			// 伸ばしすぎということはその間に答えがあるはず
+			if(!ok(op(data[l], product))) {
+				// 子が存在する限り
+				while(l < data_size) {
+					// 左の子に降りて
+					l <<= 1;
+					// もしその区間を追加しても良いなら
+					if(ok(op(data[l], product))) {
+						// 追加して
+						product = op(data[l], product);
+						// 次は右隣の区間に移る
+						++l;
+					}
+				}
+				// 一番下のノードまで降りたらその区間が答え
+				return l - data_size;
+			}
+			// 右に伸ばせるなら伸ばす
+			product = op(data[l], product);
+			// 右隣のノードへ
+			++l;
+		} while((l & -l) != l); // 2^n または 0 でない間？　右端まで辿り着いたら終了？
+		
+		return N;
+	}
 };
