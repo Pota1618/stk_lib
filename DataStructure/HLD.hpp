@@ -11,6 +11,7 @@
 // https://atcoder.jp/contests/abc294/tasks/abc294_g 
 
 // https://atcoder.jp/contests/abc294 // 根を任意にするには、ちゃんと根の head を設定するとよさそう。
+// https://atcoder.jp/contests/abc369 // LazySegTree + HLD.subtree_update
 
 #include <vector>
 #include <functional>

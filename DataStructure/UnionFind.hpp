@@ -1,5 +1,7 @@
 #include <vector>
+#include <functional>
 #include <unordered_map>
+#include <cassert>
 
 using namespace std;
 
@@ -15,7 +17,7 @@ private:
 	vector<int> m_data;
 	int m_num_group;
 public:
-	UnionFind(size_t N) : m_data(N, -1), m_num_group((int)N) {}
+	explicit UnionFind(size_t N) : m_data(N, -1), m_num_group((int)N) {}
 
 	int leader(int u) {
         assert(0 <= u && u < (int)m_data.size());
@@ -61,15 +63,15 @@ public:
 型と合成方法を与えると勝手にマージしてくれる UnionFind
 */
 template<typename Data>
-class UnionFind_with_Data : public UnionFind {
+class UnionFind_Data : public UnionFind {
 private:
     vector<Data> data;
     const function<Data(Data, Data)> op;
 public:
-    UnionFind_with_Data(const vector<Data>& A, const function<Data(Data, Data)>& op)
-    : UnionFind(A.size()), data(A), op(op) {}
+    UnionFind_Data(const vector<Data>& A, const function<Data(Data, Data)>& op)
+    	: UnionFind(A.size()), data(A), op(op) {}
     
-    bool merge(int u, int v) {
+    bool merge(int u, int v) override {
         u = leader(u);
         v = leader(v);
         if(u == v) return false;
@@ -92,15 +94,15 @@ merge はならし O(log N), leader も O(log N)
 */
 class UnionFindArray {
 private:
-    int n_groups;
+    int m_num_groups;
     vector<vector<int>> A;
 public:
-    UnionFindArray(size_t N) : ngroups((int)N), A(N, vector<int>(1)) {
-        for(int i = 0; i < N; ++i) A[i][0] = i;
+    UnionFindArray(size_t N) : m_num_groups((int)N), A(N, vector<int>(1)) {
+        for(size_t i = 0; i < N; ++i) A[i][0] = i;
     }
     
     int leader(int v) {
-        assert(0 <= v && v < A.size());
+        assert(0 <= v && v < (int)A.size());
         if(A[v].front() == v) return v;
         // マージする前に経路圧縮すると配列が変わってしまうのでしてない
         return leader(A[v].front());
@@ -122,7 +124,7 @@ public:
         A[v].clear();
         A[v].emplace_back(u);
         
-        --n_groups;
+        --m_num_groups;
         return true;
     }
     
