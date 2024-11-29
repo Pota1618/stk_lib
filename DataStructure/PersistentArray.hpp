@@ -14,7 +14,7 @@ using namespace std;
 また、どの時点からでも変更が可能。
 B 分木によって実現されているので、クエリあたりの時間計算量は O(log_baseB(N))
 */
-template<typename T, size_t B = 2>
+template<typename T, size_t B = 8>
 class PersistentArray {
 private:
     struct Node;
@@ -29,9 +29,19 @@ public:
     PersistentArray() = default;
     explicit PersistentArray(const vector<T>& v) {
         for(size_t i = 0; i < v.size(); ++i) {
-            root = destructive_set(root, i, v[i]);
+            destructive_set(i, v[i]);
         }
     }
+	explicit PersistentArray(size_t n) {
+		for(size_t i = 0; i < n; ++i) {
+			destructive_set(i, T());
+		}
+	}
+	explicit PersistentArray(size_t n, T val) {
+		for(size_t i = 0; i < n; ++i) {
+			destructive_set(i, val);
+		}
+	}
     
     const T& get(size_t k) const { 
 		NodePtr cur = root;
@@ -41,6 +51,8 @@ public:
 		}
 		return cur->val; 
 	}
+	
+	const T& operator[](size_t k) const { return get(k); }
 	
     PersistentArray set(size_t k, const T& x) const {
         NodePtr cur = root ? make_shared<Node>(*root) : make_shared<Node>();
@@ -55,16 +67,18 @@ public:
         return res;
     }
     
+private:
     void destructive_set(size_t k, const T& x) {
-        NodePtr cur = root;
+		NodePtr cur = root ? root : make_shared<Node>();
+		root = cur;
         while(k) {
-            k %= B;
-            if(!cur->ch[k]) cur->ch[k] = make_shared<Node>();
-            cur = cur->ch[k];
+			size_t i = k % B;
+            if(!cur->ch[i]) cur->ch[i] = make_shared<Node>();
+            cur = cur->ch[i];
+			k /= B;
         }
         cur->val = x;
     }
     
-private:
     explicit PersistentArray(const NodePtr& root) : root(root) {}
 };
