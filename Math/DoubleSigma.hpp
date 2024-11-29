@@ -158,7 +158,7 @@ public:
 	DoubleSigmaVerifier(int NT, int N)
 		: N(N), NT(NT) {}
 
-	bool verify(function<T(const vector<T>&)> bf, function<T(const vector<T>&)> f, string f_name = "The function") {
+	bool verify(function<T(const vector<T>&)> bf, const function<T(const vector<T>&)>& f, const string& f_name = "The function") {
 		for (int i = 0; i < NT; ++i) {
 			vector<T> A(N);
 			for (auto& a : A) {

@@ -5,7 +5,7 @@
 #include <numeric>
 #include <bit>
 
-#include "stk_lib/DataStructure/DynamicBitSet.hpp"
+#include "stk/DataStructure/DynamicBitSet.hpp"
 
 using namespace std;
 
@@ -19,7 +19,7 @@ private:
 
 public:
 	BitMatrix(int n, int m) : h(n), w(m), v(n, BitSet(m)) {}
-	BitMatrix(int n = 0) : h(n), w(n), v(n, BitSet(n)) {
+	explicit BitMatrix(int n = 0) : h(n), w(n), v(n, BitSet(n)) {
 		for (int i = 0; i < n; ++i) v[i][i] = 1;
 	}
 
@@ -78,29 +78,30 @@ BitMatrix Inverse(const BitMatrix& A) {
 	for (int i = 0; i < n; ++i)
 		v[i][n + i] = 1;
 
-	int m = 2 * n;
+	{
+		int m = 2 * n;
 
-	// 現在見ている場所を (i, j) とする
-	int i = 0, j = 0;
+		// 現在見ている場所を (i, j) とする
+		int i = 0, j = 0;
 
-	// 拡大行列に対して行基本変形を行い、
-	// 左側を単位行列にできれば逆行列が右側に現れる
-	while (i < n && j < m) {
-		int i2 = i;
-		while (i2 < n && !v[i2][j]) ++i2;
+		// 拡大行列に対して行基本変形を行い、
+		// 左側を単位行列にできれば逆行列が右側に現れる
+		while (i < n && j < m) {
+			int i2 = i;
+			while (i2 < n && !v[i2][j]) ++i2;
 
-		// すべて 0 の列があったらもうダメ。0x0 行列を返す
-		if (i2 == n) return BitMatrix();
+			// すべて 0 の列があったらもうダメ。0x0 行列を返す
+			if (i2 == n) return BitMatrix();
 
-		if (i != i2) swap(v[i], v[i2]);
+			if (i != i2) swap(v[i], v[i2]);
 
-		// 掃き出し
-		for (int i2 = 0; i2 < n; ++i2) if (v[i2][j] && i2 != i)
-			v[i2] ^= v[i];
+			// 掃き出し
+			for (int k = 0; k < n; ++k) if (v[k][j] && k != i)
+				v[k] ^= v[i];
 
-		++i; ++j;
+			++i; ++j;
+		}
 	}
-
 	// 右側が逆行列なのでコピー
 	BitMatrix invA(n, n);
 	for (int i = 0; i < n; ++i) for (int j = 0; j < n; ++j)
@@ -136,8 +137,8 @@ int ReducedRowEchelonFrom(BitMatrix& A, vector<int>* is = nullptr, vector<int>* 
 
 		if (js) js->emplace_back(j);
 
-		for (int i2 = 0; i2 < n; ++i2) if (A[i2][j] && i2 != i)
-			A[i2] ^= A[i];
+		for (int k = 0; k < n; ++k) if (A[k][j] && k != i)
+			A[k] ^= A[i];
 
 		++i; ++j;
 	}
@@ -167,35 +168,36 @@ int LinearEquations(const BitMatrix& A, const vector<bool> b, BitSet* x0 = nullp
 	// あとで解を復元するときに使う
 	vector<int> pivots;
 
-	// i, j := 現在の注目位置
-	int i = 0, j = 0;
+	{
+		// i, j := 現在の注目位置
+		int i = 0, j = 0;
 
-	// <= m なのに注意
-	while (i < n && j <= m) {
-		// 今見ている列から下の 1 を探す
-		int i2 = i;
-		while (i2 < n && !v[i2][j]) ++i2;
+		// <= m なのに注意
+		while (i < n && j <= m) {
+			// 今見ている列から下の 1 を探す
+			int i2 = i;
+			while (i2 < n && !v[i2][j]) ++i2;
 
-		// みつからなかったら次の列へ
-		if (i2 == n) {
-			++j;
-			continue;
+			// みつからなかったら次の列へ
+			if (i2 == n) {
+				++j;
+				continue;
+			}
+
+			// 見つかったら注目している行とスワップ
+			if (i != i2) swap(v[i], v[i2]);
+
+			// j 列目にピボットがあったことを記録する
+			pivots.emplace_back(j);
+
+			// 掃き出し
+			for (int k = 0; k < n; ++k) if (v[k][j] && k != i)
+				v[k] ^= v[i];
+
+			// 注目位置を右下へ
+			++i; ++j;
 		}
-
-		// 見つかったら注目している行とスワップ
-		if (i != i2) swap(v[i], v[i2]);
-
-		// j 列目にピボットがあったことを記録する
-		pivots.emplace_back(j);
-
-		// 掃き出し
-		for (int i2 = 0; i2 < n; ++i2) if (v[i2][j] && i2 != i)
-			v[i2] ^= v[i];
-
-		// 注目位置を右下へ
-		++i; ++j;
 	}
-
 	// 最後に見つかったピボットが m 列目
 	// つまり (0 0 ... 0 | 1) のような行が存在したということなのでエラー
 	if (!pivots.empty() && pivots.back() == m) return -1;

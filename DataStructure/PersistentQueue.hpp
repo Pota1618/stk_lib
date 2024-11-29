@@ -31,12 +31,8 @@ public:
         return pa.get(left + i);
     }
     
-    template<typename... Ts>
-    PersistentQueue emplace(Ts&&... args) const {
-        return PersistentQueue(pa.emplace(right, forward<Ts>(args)...), left, right + 1);
-    }
     PersistentQueue push(const T& val) const {
-        return PersistentQueue(pa.push(right, val), left, right + 1);
+        return PersistentQueue(pa.set(right, val), left, right + 1);
     }
     PersistentQueue pop() const {
         assert(!empty());
