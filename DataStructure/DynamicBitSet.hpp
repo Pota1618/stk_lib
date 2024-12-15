@@ -21,7 +21,7 @@ public:
 		u64* bits;
 		size_t pos;
 
-		Bit(u64* bit_block, size_t i) : bits(bit_block), pos(i% BLOCK_SIZE) {}
+		Bit(u64* bit_block, size_t i) : bits(bit_block), pos(i % BLOCK_SIZE) {}
 
 		operator bool() const { return bool((*bits) >> pos & 1); }
 		bool operator~() const { return (*bits >> pos & 1) == 0; }
@@ -33,14 +33,14 @@ public:
 		Bit& operator=(const Bit& other) { return *this = bool(other); }
 	};
 public:
-	BitSet(size_t n) : N(n) {
+	explicit BitSet(size_t n) : N(n) {
 		size_t asize = (n + BLOCK_SIZE - 1) / BLOCK_SIZE;
-		A = (u64*)malloc(sizeof(u64) * asize);
+		A = new u64[asize];
 		fill(A, A + asize, u64(0));
 	}
 	BitSet(const BitSet& other) : N(other.N) {
 		size_t asize = other.array_size();
-		A = (u64*)malloc(sizeof(u64) * asize);
+		A = new u64[asize];
 		assert(A != nullptr);
 		for (size_t i = 0; i < asize; ++i)
 			A[i] = other.A[i];
@@ -50,9 +50,10 @@ public:
 		other.A = nullptr;
 	}
 	BitSet& operator=(const BitSet& other) {
+		if(this == &other) return *this;
 		N = other.N;
-		if (A) free(A);
-		A = (u64*)malloc(sizeof(u64) * other.array_size());
+		if(A) delete[] A;
+		A = new u64[other.array_size()];
 		assert(A != nullptr);
 		for (size_t i = 0; i < other.array_size(); ++i)
 			A[i] = other.A[i];
@@ -60,13 +61,13 @@ public:
 	}
 	BitSet& operator=(BitSet&& other) noexcept {
 		N = other.N;
-		if (A) free(A);
+		if(A) delete[] A;
 		A = other.A;
 		other.A = nullptr;
 		return *this;
 	}
 
-	~BitSet() { if (A) free(A); }
+	~BitSet() { if (A) delete[] A; }
 
 	Bit operator[](size_t i) {
 		assert(i < N);

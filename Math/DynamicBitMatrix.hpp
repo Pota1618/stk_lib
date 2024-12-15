@@ -156,7 +156,7 @@ int ReducedRowEchelonFrom(BitMatrix& A, vector<int>* is = nullptr, vector<int>* 
 * 線形方程式 A x = b の特殊解 x0（m 次元ベクトル）を格納する（なければ false を返す）
 * また同次形 A x = 0 の解空間の基底（m 次元ベクトル）のリストを xs に格納する．
 */
-int LinearEquations(const BitMatrix& A, const vector<bool> b, BitSet* x0 = nullptr, vector<BitSet>* sol_basis = nullptr) {
+int LinearEquations(const BitMatrix& A, const vector<bool>& b, BitSet* x0 = nullptr, vector<BitSet>* sol_basis = nullptr) {
 	int n = A.height(), m = A.width();
 
 	// v := 拡大係数行列 (A | b)
