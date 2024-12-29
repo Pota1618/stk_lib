@@ -1,4 +1,6 @@
 #include <cstdint>
+#include <cassert>
+#include <numeric>
 #include <type_traits>
 
 using namespace std;
@@ -27,10 +29,12 @@ public:
 	friend ModInt operator+(const ModInt& lhs, const ModInt& rhs) { return ModInt(lhs) += rhs; }
 	friend ModInt operator-(const ModInt& lhs, const ModInt& rhs) { return ModInt(lhs) -= rhs; }
 	friend ModInt operator*(const ModInt& lhs, const ModInt& rhs) { return ModInt(lhs) *= rhs; }
+	friend ModInt operator/(const ModInt& lhs, const ModInt& rhs) { return ModInt(lhs) /= rhs; }
 	
 	ModInt& operator+=(const ModInt& other) { value = (value + other.value) % MOD; return *this; }
 	ModInt& operator-=(const ModInt& other) { value = (value - other.value + MOD) % MOD; return *this; }
 	ModInt& operator*=(const ModInt& other) { value = (value * other.value) % MOD; return *this; }
+	ModInt& operator/=(const ModInt& other) { return *this *= other.inv(); }
 	
 	ModInt operator+() const { return *this; }
     ModInt operator-() const { return ModInt() - *this; }
