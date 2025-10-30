@@ -3,8 +3,6 @@
 #include <numeric>
 #include <type_traits>
 
-using namespace std;
-
 #include "stk/Math/PrimalityTest.hpp"
 
 template<uint32_t MOD, enable_if_t<(1 <= MOD)>* = nullptr>
@@ -93,3 +91,5 @@ public:
 	static ModInt raw(u32 x) { ModInt res; res.value = x; return res; }
 	u32 val() const { return value; }
 };
+
+using ModInt998244353 = ModInt<998244353>;
