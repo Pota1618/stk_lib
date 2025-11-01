@@ -11,7 +11,7 @@ private:
 	using i64 = long long;
 	using u32 = unsigned int;
 	i64 value;
-	static constexpr bool is_prime = K_IsPrime<MOD>;
+	static constexpr bool is_prime = K_IsPrime32<MOD>;
 public:
 	ModInt() : value(0) {}
 	

@@ -42,5 +42,75 @@ constexpr bool K_MillerRabin_32(uint32_t n) {
 	return true;
 }
 
+#if defined(__GNUC__)
+typedef __int128_t int128_t;
+typedef __uint128_t uint128_t;
+
+static inline constexpr uint128_t mul128(uint64_t a, uint64_t b) { return (uint128_t)a * b; }
+static inline constexpr uint64_t mod128(uint128_t x, uint64_t d) { return (uint64_t)(x % d); }
+
+#elif defined(_MSC_VER)
+// NOT TESTED YET
+#include <intrin.h>
+
+typedef struct {
+    uint64_t low;
+    uint64_t high;
+} uint128_t;
+
+static inline constexpr uint128_t mul128(uint64_t a, uint64_t b) {
+    uint128_t r;
+    r.low = _umul128(a, b, &r.high);
+    return r;
+}
+
+static inline constexpr uint64_t mod128(uint128_t x, uint64_t divisor) {
+    uint64_t remainder;
+    _udiv128(x.high, x.low, divisor, &remainder);
+    return remainder;
+}
+
+#else
+#error "No 128-bit integer support on this compiler."
+#endif
+
+constexpr uint64_t K_PowMod_M64(uint64_t x, uint64_t k, uint64_t M) {
+	uint64_t res = 1, a = x % M;
+	while(k) {
+		if(k & 1) res = mod128(mul128(res, a), M);
+		a = mod128(mul128(a, a), M);
+		k >>= 1;
+	}
+	return res;
+}
+
+constexpr bool K_MillerRabin_64(uint64_t n) {
+	if(n <= 1) return false;
+	if(n == 2) return true;
+	if(n % 2 == 0) return false;
+	
+	uint64_t s = 0, d = n - 1;
+	while((d & 1) == 0) {
+		++s;
+		d >>= 1;
+	}
+	constexpr array<uint64_t, 8> A = {2, 325, 9375, 28178, 450775, 9780504, 1795265022};
+	
+	for(auto a : A) {
+		if(a % n == 0) return true;
+		uint64_t x = K_PowMod_M64(a, d, n);
+		if(x != 1) {
+			uint64_t t = 0;
+			for(t = 0; t < s; ++t) {
+				if(x == n - 1) break;
+				x = mod128(mul128(x, x), n);
+			}
+			if(t == s) return false;
+		}
+	}
+	return true;
+}
+
 // テンプレートにしてコンパイル時計算であることをわかりやすくしただけ。
-template<uint32_t n> constexpr bool K_IsPrime = K_MillerRabin_32(n);
+template<uint32_t N> constexpr bool K_IsPrime32 = K_MillerRabin_32(N);
+template<uint64_t N> constexpr bool K_IsPrime64 = K_MillerRabin_64(N);
