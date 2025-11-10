@@ -1,11 +1,13 @@
+#pragma once
+
 #include <cstdint>
 #include <cassert>
 #include <numeric>
 #include <type_traits>
 
-#include "stk/Math/PrimalityTest.hpp"
+#include "../Math/PrimalityTest.hpp"
 
-template<uint32_t MOD, enable_if_t<(1 <= MOD)>* = nullptr>
+template<uint32_t MOD, std::enable_if_t<(1 <= MOD)>* = nullptr>
 class ModInt {
 private:
 	using i64 = long long;
@@ -15,13 +17,13 @@ private:
 public:
 	ModInt() : value(0) {}
 	
-	template<typename T, typename enable_if<is_integral<T>::value, T>::type* = nullptr>
+	template<typename T, typename std::enable_if<std::is_integral<T>::value, T>::type* = nullptr>
 	explicit ModInt(T x) : value((x % MOD + MOD) % MOD) {}
 	
 	ModInt(const ModInt& other) : value(other.value) {}
 	ModInt& operator=(const ModInt& other) { value = other.value; return *this; }
 	
-	template<typename T, typename enable_if<is_integral<T>::value, T>::type* = nullptr>
+	template<typename T, typename std::enable_if<std::is_integral<T>::value, T>::type* = nullptr>
 	ModInt& operator=(T x) { value = x; return *this; }
 	
 	friend ModInt operator+(const ModInt& lhs, const ModInt& rhs) { return ModInt(lhs) += rhs; }
@@ -57,8 +59,8 @@ public:
 			i64 a = value, b = mod(), u = 1, v = 0;
 			while (b) {
 				i64 t = a / b;
-				a -= t * b; swap(a, b);
-				u -= t * v; swap(u, v);
+				a -= t * b; std::swap(a, b);
+				u -= t * v; std::swap(u, v);
 			}
 			u %= mod();
 			if (u < 0) u += mod();
