@@ -6,6 +6,7 @@
 #include <queue>
 #include <numbers>
 #include <algorithm>
+#include <bit>
 
 #include "../Math/ModInt.hpp"
 
@@ -36,7 +37,7 @@ public:
 		size_t na = A.size(), nb = B.size();
 		assert(na != 0 && nb != 0);
 		size_t nc = na + nb - 1;
-		size_t depth = bit_width(nc);
+		int depth = (int)std::bit_width(nc);
 		size_t n2 = 1ull << depth;
 		
 		std::vector<mint> da, db;

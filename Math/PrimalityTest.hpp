@@ -11,7 +11,7 @@ constexpr uint32_t K_PowMod_M32(uint64_t x, uint64_t k, uint32_t M) {
 		a = (a * a) % M;
 		k >>= 1;
 	}
-	return res;
+	return (uint32_t)res;
 }
 
 // uint32 に収まる範囲の整数での素数判定。

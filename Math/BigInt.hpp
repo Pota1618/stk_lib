@@ -6,10 +6,15 @@
 #include <cassert>
 #include <algorithm>
 
+#include "../Math/Convolution.hpp"
+
 class BigInt {
 private:
 	int sign;
 	std::vector<int> digits;
+
+	using mint = ModInt998244353;
+	static NTT<mint::mod(), 3> ntt;
 public:
 	BigInt() : digits(1, 0), sign(1) {}
 	BigInt(const std::string& n) : sign(1) {
@@ -99,6 +104,23 @@ public:
 		return res;
 	}
 
+	BigInt operator*(const BigInt& other) const {
+		std::vector<mint> A, B;
+		A.reserve(digits.size());
+		B.reserve(other.digits.size());
+		for (auto d : digits) A.emplace_back(d);
+		for (auto d : other.digits) B.emplace_back(d);
+		
+		auto C = ntt.convolution(A, B);
+		std::vector<int> ds;
+		ds.reserve(C.size());
+		for (size_t i = 0; i < C.size(); ++i) ds.emplace_back(C[i].val());
+
+		BigInt res(sign * other.sign, ds);
+		res.fix_carry();
+		return res;
+	}
+
 private:
 	BigInt(int s, const std::vector<int>& v) : sign(s), digits(v) {}
 
@@ -162,3 +184,5 @@ private:
 inline std::string to_string(const BigInt& val) {
 	return val.to_string();
 }
+
+NTT<BigInt::mint::mod(), 3> BigInt::ntt;

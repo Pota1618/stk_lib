@@ -55,7 +55,7 @@ public:
 			return pow(mod() - 2);
 		}
 		else {
-			assert(gcd((u32)value, mod()) == 1);
+			assert(std::gcd((u32)value, mod()) == 1);
 			i64 a = value, b = mod(), u = 1, v = 0;
 			while (b) {
 				i64 t = a / b;
