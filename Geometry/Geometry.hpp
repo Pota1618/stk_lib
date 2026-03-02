@@ -114,6 +114,7 @@ namespace Geometry {
 		
 		Vec2 vec() const { return Vec2(p0, p1); }
 		Vec2 counter_vec() const { return Vec2(p1, p0); }
+		Vec2 dir() const { return vec().normalize(); }
 		
 		friend std::ostream& operator<<(std::ostream& os, const Line& l) { os << l.p0 << " - " << l.p1; return os; }
 	};
@@ -121,6 +122,9 @@ namespace Geometry {
 	struct Segment : public Line {
 		Segment() : Line() {}
 		Segment(const Vec2& s, const Vec2& t) : Line(s, t) {}
+		
+		Real length() const { return vec().length(); }
+		Real length2() const { return vec().length2(); }
 		
 		// 二つの線分の交点を返す。接している場合も true
 		// 長さ 0 の線分は未定義
@@ -180,7 +184,11 @@ namespace Geometry {
 		
 		Real distance(const Vec2& p) const override {
 			const auto v = vec();
-			Real t = v.dot(p - p0) / v.length2();
+			
+			Real len2 = v.length2();
+			if(eq(len2, 0)) return (p0-p).length();
+			
+			Real t = v.dot(p - p0) / len2;
 			if(t < 0) return (p0 - p).length();
 			if(t > 1) return (p1 - p).length();
 			return ((p0 + v * t) - p).length();
@@ -194,6 +202,22 @@ namespace Geometry {
 			res = std::min(res, s.distance(this->p0));
 			res = std::min(res, s.distance(this->p1));
 			return res;
+		}
+	};
+	
+	struct Polygon {
+		std::vector<Vec2> points;
+		
+		Polygon(const std::vector<Vec2>& pts) : points(pts) {}
+		
+		Real area() const {
+			Vec2 p0 = points.back();
+			Real res = 0;
+			for(const Vec2& p1 : points) {
+				res += (p0 - p1).cross(p0);
+				p0 = p1;
+			}
+			return res / 2;
 		}
 	};
 	
