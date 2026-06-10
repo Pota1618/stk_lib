@@ -4,7 +4,7 @@
 #include <string>
 #include <cstdint>
 
-template<class M>
+template <class M>
 concept Monoid = requires { 
 	typename M::value_type;
     { M::e() } -> std::same_as<typename M::value_type>;
@@ -12,10 +12,22 @@ concept Monoid = requires {
 		-> std::same_as<typename M::value_type>;
 };
 
-template<class M>
-concept CommutativeMonoid = Monoid<M> && requires {
+template <class M>
+concept Commutative = requires {
 	{ M::commutative } -> std::convertible_to<bool>;
 } && M::commutative;
+
+template <class M>
+concept CommutativeMonoid = Commutative<M> && Monoid<M>;
+
+template <class M>
+concept Group = Monoid<M> && requires {
+	{ M::inv(std::declval<typename M::value_type>()) }
+		-> std::same_as<typename M::value_type>;
+};
+
+template <class M>
+concept CommutativeGroup = Commutative<M> && Group<M>;
 
 
 constexpr int64_t INF = 1ll << 60;
@@ -26,6 +38,19 @@ struct AddMonoid {
 	static constexpr bool commutative = true;
 	static T e() { return 0; }
 	static T op(T a, T b) { return a + b; }
+};
+
+template<typename T = int64_t>
+struct AddGroup : AddMonoid<T> {
+	static T inv(T a) { return -a; }
+};
+
+template <typename T = int64_t>
+struct MulMonoid {
+	using value_type = T;
+	static constexpr bool commutative = true;
+	static T e() { return 1; }
+	static T op(T a, T b) { return a * b; }
 };
 
 template <typename T = int64_t>
