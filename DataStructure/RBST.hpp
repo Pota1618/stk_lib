@@ -5,21 +5,24 @@
 #include <cassert>
 
 template <class Tree> 
-concept BinarySearchTreeBase = requires {
-	typename Tree::value_type;
-	typename Tree::node_type;
-	typename Tree::node_ptr_type;
+concept BinarySearchTreeBase = requires (
+	Tree tree,
+	typename Tree::value_type value_type,
+	typename Tree::node_type node_type,
+	typename Tree::node_ptr_type ptr_type
+) {
+	// node_ptr merge(ptr l, ptr r)
+	{ tree.merge(ptr_type, ptr_type) } -> std::same_as<decltype(ptr_type)>;
 	
-	// void insert(ll idx, T val)
-	{ Tree::insert(std::declval<int64_t>(), std::declval<Tree::value_type>()) } -> std::same_as<void>;
-	// void erase(ll idx)
-	{ Tree::erase(std::declval<int64_t>()) } -> std::same_as<void>;
-	// ptr merge(ptr l, ptr r)
-	{ Tree::merge(std::declval<Tree::node_ptr_type>(), std::declval<Tree::node_ptr_type>()) }
-		-> std::same_as<typename Tree::node_ptr_type>;
-	// pair<ptr, ptr> split(ptr root, ll num);
-	{ Tree::split(std::declval<Tree::node_ptr_type>(), std::declval<int64_t>()) }
-		-> std::same_as<typename std::pair<typename Tree::node_ptr_type, typename Tree::node_ptr_type>>;
+	// pair<node_ptr, node_ptr> split(node_ptr root, ll num_left);
+	{ tree.split(ptr_type, std::declval<int64_t>()) } 
+		-> std::same_as<typename std::pair<decltype(ptr_type), decltype(ptr_type)>>;
+		
+	// node_ptr insert(root, idx, node)
+	{ tree.insert(ptr_type, value_type, ptr_type) } -> std::same_as<decltype(ptr_type)>;
+	
+	// node_ptr erase(root, idx)
+	{ tree.erase(ptr_type, std::declval<int64_t>()) } -> std::same_as<decltype(ptr_type)>;
 };
 
 template <typename T>
@@ -116,6 +119,8 @@ public:
 		else if(sz < k) return get(t->right, k - sz - 1);
 		else return t;
 	}
+	
+	static_assert(BinarySearchTreeBase<RandomizedBinarySearchTree<T>>);
 };
 
 template <typename T>
