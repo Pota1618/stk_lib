@@ -73,13 +73,8 @@ class PersistentLazySegTree {
 	
 public:
 	PersistentLazySegTree() : root(nullptr) {}
+	explicit PersistentLazySegTree(const std::vector<data_type>& initial_data) { build(initial_data); }
 	explicit PersistentLazySegTree(node_ptr_type root) : root(root) {}
-		
-	PersistentLazySegTree set(size_t idx, data_type x) {
-		node_ptr_type new_root = Node::duplicate(root);
-        new_root = set_impl(new_root, idx, x, 0, 1ull << D);	
-		return PersistentLazySegTree(new_root);
-	}
 	
 	PersistentLazySegTree apply(size_t l, size_t r, lazy_type f) {
 		assert(l <= r && r <= (1ull << D));
@@ -97,40 +92,30 @@ public:
 	
 	PersistentLazySegTree copy(PersistentLazySegTree source, size_t l, size_t r) {
 		assert(l <= r && r <= (1ull << D));
-		
         node_ptr_type new_root = Node::duplicate(root);
-		// prod_impl(new_root, l, r, 0, 1ull << D);
 		node_ptr_type src_new_root = Node::duplicate(source.root);
-		// prod_impl(new_root, src_new_root, l, r, 0, 1ull<<D);
 		copy_impl(src_new_root, new_root, l, r, 0, 1ull << D);
 		return PersistentLazySegTree(new_root);
 	}
 	
 private:
-    node_ptr_type set_impl(node_ptr_type node, const size_t idx, data_type x, const size_t nl, const size_t nr) {
-        if(nr - nl <= 1) {
-            node->map(nr - nl);
-            node->lazy = id();
-            node->data = x;
-            return node;
-        }
-        
-        node->make_children();
-        node->propagate();
-        node->map(nr - nl);
-        node->lazy = id();
-        size_t m = (nl+nr)/2;
-        if(idx < m) {
-            node->left = Node::duplicate(node->left);
-            set_impl(node->left, idx, x, nl, m);
-        }
-        else {
-            node->right = Node::duplicate(node->right);
-            set_impl(node->right, idx, x, m, nr);
-        }
-        node->update();
-        return node;
-    }
+	void build(const std::vector<data_type>& data) {
+		root = std::make_shared<Node>();
+		build_impl(root, data, 0, 1ull << D);
+	}
+	
+	void build_impl(node_ptr_type node, const std::vector<data_type>& data, size_t nl, size_t nr) {
+		if(nr - nl <= 1) {
+			node->data = data[nl];
+		}
+		else {
+			node->make_children();
+			size_t mid = (nl + nr) / 2;
+			build_impl(node->left, data, nl, mid);
+			build_impl(node->right, data, mid, nr);
+			node->data = op(node->right->data, node->left->data);
+		}
+	}
 
 	void apply_impl(node_ptr_type node, const size_t l, const size_t r, lazy_type lazy, const size_t nl, const size_t nr) {
         if(nr - nl > 1) {
@@ -175,7 +160,7 @@ private:
 		}
 	}
 	
-	node_ptr_type copy_impl(node_ptr_type src, node_ptr_type dst, const size_t l, const size_t r, const size_t nl, const size_t nr) {
+	void copy_impl(node_ptr_type src, node_ptr_type dst, const size_t l, const size_t r, const size_t nl, const size_t nr) {
 		if(nr - nl > 1) {
             dst->make_children();
             dst->propagate();
@@ -198,12 +183,8 @@ private:
 			copy_impl(src->left, dst->left, l, r, nl, mid);
 			copy_impl(src->right, dst->right, l, r, mid, nr);
             dst->update();
-			src->update();
 		}
-		
-		return dst;
 	}
-    
 };
 
 /*
