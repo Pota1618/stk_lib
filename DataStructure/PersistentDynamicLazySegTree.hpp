@@ -229,11 +229,10 @@ using namespace std;
 int main() {
 	int N, Q; cin >> N >> Q;
 	
-	PersistentLazySegTree<RangeAffineRangeSumMonoid> seg;
-	for(int i = 0; i < N; ++i) {
-		int a; cin >> a;
-		seg = seg.set(i, a);
-	}
+    int N, Q; cin >> N >> Q;
+	vector<long long> A(N);
+	for(int i = 0; i < N; ++i) cin >> A[i];
+	PersistentLazySegTree<RangeAffineRangeSumMonoid> seg(A);
 	
 	unordered_map<int, PersistentLazySegTree<RangeAffineRangeSumMonoid>> segs;
 	segs[-1] = seg;
