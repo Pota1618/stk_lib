@@ -104,3 +104,11 @@ struct AffineMonoid {
 		);
 	}
 };
+
+template <class MM>
+concept MapMonoid = Monoid<typename MM::data_monoid> && Monoid<typename MM::lazy_monoid> && 
+requires(typename MM::data_monoid::value_type x, typename MM::lazy_monoid::value_type f) {
+	// The mapping function defines how the LazyMonoid acts on the DataMonoid
+	{ MM::mapping(f, x) } -> std::same_as<decltype(x)>;
+    { MM::power(f, std::declval<int>()) } -> std::same_as<decltype(f)>;
+};

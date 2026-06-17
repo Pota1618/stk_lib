@@ -3,23 +3,9 @@
 #include <functional>
 #include <cassert>
 
-template <class M>
-concept Monoid = requires { 
-	typename M::value_type;
-    { M::e() } -> std::same_as<typename M::value_type>;
-    { M::op(std::declval<typename M::value_type>(), std::declval<typename M::value_type>()) } 
-		-> std::same_as<typename M::value_type>;
-};
-
-template <class MM>
-concept MapMonoid = Monoid<typename MM::data_monoid> && Monoid<typename MM::lazy_monoid> && 
-requires(typename MM::data_monoid::value_type x, typename MM::lazy_monoid::value_type f) {
-	// The mapping function defines how the LazyMonoid acts on the DataMonoid
-	{ MM::mapping(f, x) } -> std::same_as<decltype(x)>;
-    { MM::power(f, std::declval<int>()) } -> std::same_as<decltype(f)>;
-};
+#include "stk/Math/Monoid.hpp"
 	
-template <MapMonoid MM, size_t D = 18>
+template <MapMonoid MM, size_t D = 30>
 class PersistentLazySegTree {
 	using i64 = int64_t;
 	struct Node;
@@ -75,6 +61,12 @@ public:
 	PersistentLazySegTree() : root(nullptr) {}
 	explicit PersistentLazySegTree(const std::vector<data_type>& initial_data) { build(initial_data); }
 	explicit PersistentLazySegTree(node_ptr_type root) : root(root) {}
+		
+	PersistentLazySegTree set(size_t idx, data_type x) {
+		node_ptr_type new_root = Node::duplicate(root);
+    	set_impl(new_root, idx, x, 0, 1ull << D);	
+		return PersistentLazySegTree(new_root);
+	}
 	
 	PersistentLazySegTree apply(size_t l, size_t r, lazy_type f) {
 		assert(l <= r && r <= (1ull << D));
@@ -116,6 +108,35 @@ private:
 			node->data = op(node->right->data, node->left->data);
 		}
 	}
+
+    void set_impl(node_ptr_type node, const size_t idx, data_type x, const size_t nl, const size_t nr) {
+        if(nr - nl <= 1) {
+            node->lazy = id();
+            node->data = x;
+			return;
+        }
+        
+        node->make_children();
+        node->propagate();
+        node->map(nr - nl);
+        node->lazy = id();
+        
+		size_t m = (nl+nr)/2;
+		node_ptr_type next = node->left, other = node->right;
+		if(idx >= m) swap(next, other);
+		
+		if(m - nl > 1) {
+			other->make_children();
+			other->propagate();
+		}
+		other->map(m - nl);
+		other->lazy = id();
+		
+		if(idx >= m) set_impl(next, idx, x, m, nr);
+		else set_impl(next, idx, x, nl, m);
+        
+        node->update();
+    }
 
 	void apply_impl(node_ptr_type node, const size_t l, const size_t r, lazy_type lazy, const size_t nl, const size_t nr) {
         if(nr - nl > 1) {
@@ -185,7 +206,9 @@ private:
             dst->update();
 		}
 	}
+    
 };
+
 
 /*
 https://judge.yosupo.jp/problem/persistent_range_affine_range_sum
