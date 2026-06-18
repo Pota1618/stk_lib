@@ -3,6 +3,9 @@
 #include <cmath>
 #include <string>
 #include <cstdint>
+#include <numeric>
+
+constexpr int64_t INF = 1ll << 60;
 
 template <class M>
 concept Monoid = requires { 
@@ -28,9 +31,6 @@ concept Group = Monoid<M> && requires {
 
 template <class M>
 concept CommutativeGroup = Commutative<M> && Group<M>;
-
-
-constexpr int64_t INF = 1ll << 60;
 
 template <typename T = int64_t>
 struct AddMonoid {
@@ -75,7 +75,19 @@ struct StringConcatMonoid {
 	static value_type op(const value_type& a, const value_type& b) { return a + b; }
 };
 
-template<class M1, class M2>
+template <typename T>
+struct AffineMonoid {
+	using value_type = std::pair<T, T>;
+	static value_type e() { return std::make_pair(1, 0); }
+	static value_type op(const value_type& g, const value_type& f) {
+		return std::make_pair(
+			f.first * g.first, 
+			g.first * f.second + g.second
+		);
+	}
+};
+
+template<Monoid M1, Monoid M2>
 struct ProductMonoid {
 	using value_type = std::pair<
 		typename M1::value_type,
@@ -89,18 +101,6 @@ struct ProductMonoid {
 		return std::make_pair(
 			M1::op(b.first, a.first),
 			M2::op(b.second, a.second)
-		);
-	}
-};
-
-template <typename T>
-struct AffineMonoid {
-	using value_type = std::pair<T, T>;
-	static value_type e() { return std::make_pair(1, 0); }
-	static value_type op(const value_type& g, const value_type& f) {
-		return std::make_pair(
-			f.first * g.first, 
-			g.first * f.second + g.second
 		);
 	}
 };

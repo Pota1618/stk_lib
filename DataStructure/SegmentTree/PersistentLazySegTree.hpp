@@ -97,6 +97,7 @@ private:
 	}
 	
 	void build_impl(node_ptr_type node, const std::vector<data_type>& data, size_t nl, size_t nr) {
+		if(data.size() <= nl) return;
 		if(nr - nl <= 1) {
 			node->data = data[nl];
 		}
@@ -206,7 +207,6 @@ private:
             dst->update();
 		}
 	}
-    
 };
 
 
