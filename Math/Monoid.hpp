@@ -112,3 +112,15 @@ requires(typename MM::data_monoid::value_type x, typename MM::lazy_monoid::value
 	{ MM::mapping(f, x) } -> std::same_as<decltype(x)>;
     { MM::power(f, std::declval<int>()) } -> std::same_as<decltype(f)>;
 };
+
+template <typename T>
+struct RangeAffineRangeSum {
+	using data_monoid = AddMonoid<T>;
+	using lazy_monoid = AffineMonoid<T>;
+	static data_monoid::value_type mapping(lazy_monoid::value_type f, data_monoid::value_type x) {
+		return (f.first * x + f.second);
+	}
+	static lazy_monoid::value_type power(lazy_monoid::value_type f, int p) {
+		return std::make_pair(f.first, (f.second * p));
+	}
+};
