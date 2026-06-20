@@ -10,7 +10,7 @@
 template <BinaryTreeNodeConcept Node>
 class RandomizedBinarySearchTree {
 public:
-	using value_type = Node::value_type;
+	using key_type = Node::key_type;
 	using node_type = Node;
 	using node_ptr_type = std::shared_ptr<node_type>;
 	
@@ -91,7 +91,7 @@ public:
 template <BinaryTreeNodeConcept Node>
 class LazyReversibleRandomizedBinarySearchTree {
 public:
-	using value_type = Node::value_type;
+	using key_type = Node::key_type;
 	using lazy_type = Node::lazy_type;
 	using node_type = Node;
 	using node_ptr_type = std::shared_ptr<node_type>;
@@ -182,4 +182,5 @@ public:
 };
 
 template <typename T> using RBSTSet = BinaryTreeSet<RandomizedBinarySearchTree<BinaryTreeNodeBase<T>>>;
+template <typename K, typename V> using RBSTMap = BinaryTreeMap<RandomizedBinarySearchTree<BinaryTreeMapNode<K, V>>>;
 template <MapMonoid MM> using RBSTArray = BinaryTreeArray<LazyReversibleRandomizedBinarySearchTree<LazyReversibleBinaryTreeNode<MM>>>;
