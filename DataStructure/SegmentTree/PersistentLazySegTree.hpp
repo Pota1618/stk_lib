@@ -4,222 +4,164 @@
 #include <cassert>
 
 #include "stk/Math/Monoid.hpp"
-	
+
+// 抽象化永続遅延評価疎線段樹 (Persistent Sparse Lazy Segment Tree)
 template <MapMonoid MM, size_t D = 30>
-class PersistentLazySegTree {
-	using i64 = int64_t;
-	struct Node;
-	using node_type = Node;
-	using node_ptr_type = std::shared_ptr<node_type>;
+class SparsePersistentLazySegTree {
+private:
 	using data_type = MM::data_monoid::value_type;
 	using lazy_type = MM::lazy_monoid::value_type;
+	static constexpr auto op = MM::data_monoid::op;
+	static constexpr auto composition = MM::lazy_monoid::op;
+	static constexpr auto e = MM::data_monoid::e;
+	static constexpr auto id = MM::lazy_monoid::e;
+	static constexpr auto mapping = MM::mapping;
+	static constexpr auto power = MM::power;
 	
-	node_ptr_type root;
-	
-	inline static constexpr auto e = MM::data_monoid::e;
-	inline static constexpr auto op = MM::data_monoid::op;
-	inline static constexpr auto id = MM::lazy_monoid::e;
-	inline static constexpr auto composition = MM::lazy_monoid::op;
-	inline static constexpr auto mapping = MM::mapping;
-	
+	struct Node;
+	using node_ptr = std::shared_ptr<Node>;
 	struct Node {
+		node_ptr left, right;
 		data_type data;
 		lazy_type lazy;
-		node_ptr_type left, right;
 		
-		constexpr Node() : data(e()), lazy(id()), left(nullptr), right(nullptr) {}
-		explicit Node(data_type x) : data(x), lazy(id()), left(nullptr), right(nullptr) {}
-		
-        void make_children() {
-            left = duplicate(left);
-            right = duplicate(right);
-        }
-		// distribute lazy value to children
-		void propagate() {
-            left->lazy = composition(this->lazy, left->lazy);
-            right->lazy = composition(this->lazy, right->lazy);
-		}
-		// apply lazy to data
-		void map(size_t p) {
-            data = mapping(MM::power(lazy, p), data);
-		}
-		// recalclate prod
-		void update() {
-			data = op(
-				right ? right->data : e(), 
-				left ? left->data : e()
-			);
-		}
-        
-        inline static node_ptr_type duplicate(node_ptr_type node) {
-            node_ptr_type res = node ? std::make_shared<Node>(*node) : std::make_shared<Node>();
-            return res;
-        }
+		Node() : left(nullptr), right(nullptr), data(e()), lazy(id()) {}
+		Node(const data_type& x) : left(nullptr), right(nullptr), data(x), lazy(id()) {}
 	};
 	
+	node_ptr root;
+	
 public:
-	PersistentLazySegTree() : root(nullptr) {}
-	explicit PersistentLazySegTree(const std::vector<data_type>& initial_data) { build(initial_data); }
-	explicit PersistentLazySegTree(node_ptr_type root) : root(root) {}
-		
-	PersistentLazySegTree set(size_t idx, data_type x) {
-		node_ptr_type new_root = Node::duplicate(root);
-    	set_impl(new_root, idx, x, 0, 1ull << D);	
-		return PersistentLazySegTree(new_root);
+	SparsePersistentLazySegTree() : root(std::make_shared<Node>()) {}
+	SparsePersistentLazySegTree(const std::vector<data_type>& vec) : root(std::make_shared<Node>()) {
+		build(root, vec, 0, 1ull << D);
 	}
 	
-	PersistentLazySegTree apply(size_t l, size_t r, lazy_type f) {
-		assert(l <= r && r <= (1ull << D));
-		node_ptr_type new_root = Node::duplicate(root);
-        apply_impl(new_root, l, r, f, 0ull, 1ull<<D);
-		return PersistentLazySegTree(new_root);
+	SparsePersistentLazySegTree apply(size_t l, size_t r, const lazy_type& f) {
+		if(l >= r) return *this;
+		node_ptr new_root = duplicate_node(root);
+		apply_impl(new_root, l, r, 0, 1ull << D, f);
+		return SparsePersistentLazySegTree(new_root);
 	}
 	
-	std::pair<PersistentLazySegTree, data_type> prod(size_t l, size_t r) {
-		assert(l <= r && r <= (1ull << D));
-        node_ptr_type new_root = Node::duplicate(root);
-        data_type res = prod_impl(new_root, l, r, 0, 1ull << D);
-        return std::make_pair(PersistentLazySegTree(new_root), res);
+	data_type prod(size_t l, size_t r) {
+		if(l >= r) return e();
+		return prod_impl(root, l, r, 0, 1ull << D);
 	}
 	
-	PersistentLazySegTree copy(PersistentLazySegTree source, size_t l, size_t r) {
-		assert(l <= r && r <= (1ull << D));
-        node_ptr_type new_root = Node::duplicate(root);
-		node_ptr_type src_new_root = Node::duplicate(source.root);
+	SparsePersistentLazySegTree copy(SparsePersistentLazySegTree source, size_t l, size_t r) {
+		node_ptr new_root = duplicate_node(root);
+		node_ptr src_new_root = duplicate_node(source.root);
 		copy_impl(src_new_root, new_root, l, r, 0, 1ull << D);
-		return PersistentLazySegTree(new_root);
+		return SparsePersistentLazySegTree(new_root);
 	}
-	
 private:
-	void build(const std::vector<data_type>& data) {
-		root = std::make_shared<Node>();
-		build_impl(root, data, 0, 1ull << D);
+	SparsePersistentLazySegTree(node_ptr new_root) : root(new_root) {}
+
+	void build(node_ptr node, const std::vector<data_type>& vec, size_t nl, size_t nr) {
+		if(nl >= vec.size()) return;
+		if(nr - nl == 1) {
+			node->data = vec[nl];
+			return;
+		}
+		size_t nm = (nl + nr) / 2;
+		node->left = std::make_shared<Node>();
+		node->right = std::make_shared<Node>();
+		build(node->left, vec, nl, nm);
+		build(node->right, vec, nm, nr);
+		update(node);
 	}
-	
-	void build_impl(node_ptr_type node, const std::vector<data_type>& data, size_t nl, size_t nr) {
-		if(data.size() <= nl) return;
-		if(nr - nl <= 1) {
-			node->data = data[nl];
+
+	void apply_impl(node_ptr node, size_t ql, size_t qr, size_t nl, size_t nr, const lazy_type& f) {
+		if(qr <= nl || nr <= ql) return;
+		else if(ql <= nl && nr <= qr) {
+			map(node, f, nr - nl);
 		}
 		else {
-			node->make_children();
-			size_t mid = (nl + nr) / 2;
-			build_impl(node->left, data, nl, mid);
-			build_impl(node->right, data, mid, nr);
-			node->data = op(node->right->data, node->left->data);
-		}
-	}
-
-    void set_impl(node_ptr_type node, const size_t idx, data_type x, const size_t nl, const size_t nr) {
-        if(nr - nl <= 1) {
-            node->lazy = id();
-            node->data = x;
-			return;
-        }
-        
-        node->make_children();
-        node->propagate();
-        node->map(nr - nl);
-        node->lazy = id();
-        
-		size_t m = (nl+nr)/2;
-		node_ptr_type next = node->left, other = node->right;
-		if(idx >= m) swap(next, other);
-		
-		if(m - nl > 1) {
-			other->make_children();
-			other->propagate();
-		}
-		other->map(m - nl);
-		other->lazy = id();
-		
-		if(idx >= m) set_impl(next, idx, x, m, nr);
-		else set_impl(next, idx, x, nl, m);
-        
-        node->update();
-    }
-
-	void apply_impl(node_ptr_type node, const size_t l, const size_t r, lazy_type lazy, const size_t nl, const size_t nr) {
-        if(nr - nl > 1) {
-            node->make_children();
-            node->propagate(); // 葉ではないなら伝播
-        }
-        node->map(nr - nl);
-        node->lazy = id();
-        
-        if(l <= nl && nr <= r) { // 包含されている
-			node->lazy = composition(lazy, node->lazy);
-            if(nr - nl > 1) node->propagate();
-            node->map(nr - nl);
-            node->lazy = id();
-		}
-        else if(l < nr && nl < r) {
-			apply_impl(node->left , l, r, lazy, nl, (nl+nr)/2);
-			apply_impl(node->right, l, r, lazy, (nl+nr)/2, nr);
-            node->update();
+			propagate(node, nr - nl);
+			size_t nm = (nl + nr) / 2;
+			apply_impl(node->left, ql, qr, nl, nm, f);
+			apply_impl(node->right, ql, qr, nm, nr, f);
+			update(node);
 		}
 	}
 	
-	data_type prod_impl(node_ptr_type node, const size_t l, const size_t r, const size_t nl, const size_t nr) {
-		if(nr - nl > 1) {
-            node->make_children();
-            node->propagate(); // 葉ではないなら伝播
-        }
-        node->map(nr - nl);
-		node->lazy = id();
-		
-        if(l <= nl && nr <= r) { // 包含されている
+	data_type prod_impl(node_ptr node, size_t ql, size_t qr, size_t nl, size_t nr) {
+		if(!node) return e();
+		else if(qr <= nl || nr <= ql) return e();
+		else if(ql <= nl && nr <= qr) {
 			return node->data;
 		}
-		else if(l < nr && nl < r) { // 重なっている
-			size_t mid = (nl + nr) / 2;
-			data_type res_l = prod_impl(node->left, l, r, nl, mid);
-			data_type res_r = prod_impl(node->right, l, r, mid, nr);
-			
+		else {
+			propagate(node, nr - nl);
+			size_t nm = (nl + nr) / 2;
+			data_type res_l = prod_impl(node->left, ql, qr, nl, nm);
+			data_type res_r = prod_impl(node->right, ql, qr, nm, nr);
 			return op(res_r, res_l);
-		} else {
-			return e();
 		}
 	}
 	
-	void copy_impl(node_ptr_type src, node_ptr_type dst, const size_t l, const size_t r, const size_t nl, const size_t nr) {
-		if(nr - nl > 1) {
-            dst->make_children();
-            dst->propagate();
-            src->make_children();
-            src->propagate();
-        }
-		dst->map(nr - nl);
-        dst->lazy = id();
-        src->map(nr - nl);
-        src->lazy = id();
-        
-		if(l <= nl && nr <= r) { // 包含されている
+	void copy_impl(node_ptr src, node_ptr dst, size_t ql, size_t qr, size_t nl, size_t nr) {
+		if(qr <= nl || nr <= ql) return;
+		else if(ql <= nl && nr <= qr) {
 			dst->data = src->data;
 			dst->lazy = src->lazy;
 			dst->left = src->left;
 			dst->right = src->right;
 		}
-		else if(l < nr && nl < r) { // 重なっている
-			size_t mid = (nl + nr) / 2;
-			copy_impl(src->left, dst->left, l, r, nl, mid);
-			copy_impl(src->right, dst->right, l, r, mid, nr);
-            dst->update();
+		else {
+			propagate(src, nr - nl);
+			propagate(dst, nr - nl);
+			size_t nm = (nl + nr) / 2;
+			copy_impl(src->left, dst->left, ql, qr, nl, nm);
+			copy_impl(src->right, dst->right, ql, qr, nm, nr);
+			update(dst);
 		}
 	}
-};
 
+	void propagate(node_ptr node, int len) {
+		node->left = duplicate_node(node->left);
+		node->right = duplicate_node(node->right);
+		map(node->left, node->lazy, len/2);
+		map(node->right, node->lazy, len/2);
+		node->lazy = id();
+	}
+	
+	void map(node_ptr node, const lazy_type& f, int len) {
+		node->data = mapping(power(f, len), node->data);
+		node->lazy = composition(f, node->lazy);
+	}
+	
+	inline void update(node_ptr node) {
+		node->data = op(
+			node->right->data,
+			node->left->data
+		);
+	}
+	
+	inline node_ptr duplicate_node(node_ptr node) {
+		return (node ? std::make_shared<Node>(*node) : std::make_shared<Node>());
+	}
+};
 
 /*
 https://judge.yosupo.jp/problem/persistent_range_affine_range_sum
 
-using mint = long long;
-constexpr mint MOD = 998244353;
+template <class M>
+concept Monoid = requires { 
+	typename M::value_type;
+    { M::e() } -> std::same_as<typename M::value_type>;
+    { M::op(std::declval<typename M::value_type>(), std::declval<typename M::value_type>()) } 
+		-> std::same_as<typename M::value_type>;
+};
 
-struct RangeSumMonoid {
-    using value_type = mint;
-    static value_type e() { return 0; }
-    static value_type op(const value_type& a, const value_type& b) { return (a + b) % MOD; }
+constexpr int64_t MOD = 998244353;
+template <typename T = int64_t>
+struct AddMonoid {
+	using value_type = T;
+	static constexpr bool commutative = true;
+	static T e() { return 0; }
+	static T op(T a, T b) { return (a + b) % MOD; }
 };
 
 template <typename T>
@@ -234,30 +176,39 @@ struct AffineMonoid {
 	}
 };
 
-struct RangeAffineRangeSumMonoid {
-	using data_monoid = RangeSumMonoid;
-	using lazy_monoid = AffineMonoid<mint>;
-	
+template <class MM>
+concept MapMonoid = Monoid<typename MM::data_monoid> && Monoid<typename MM::lazy_monoid> && 
+requires(typename MM::data_monoid::value_type x, typename MM::lazy_monoid::value_type f) {
+	// The mapping function defines how the LazyMonoid acts on the DataMonoid
+	{ MM::mapping(f, x) } -> std::same_as<decltype(x)>;
+    { MM::power(f, std::declval<int>()) } -> std::same_as<decltype(f)>;
+};
+
+template <typename T>
+struct RangeAffineRangeSum {
+	using data_monoid = AddMonoid<T>;
+	using lazy_monoid = AffineMonoid<T>;
 	static data_monoid::value_type mapping(lazy_monoid::value_type f, data_monoid::value_type x) {
-        return (f.first * x + f.second) % MOD;
-    }
-	static lazy_monoid::value_type power(lazy_monoid::value_type f, size_t p) {
-		return {f.first, (f.second * p) % MOD};
+		return (f.first * x + f.second) % MOD;
+	}
+	static lazy_monoid::value_type power(lazy_monoid::value_type f, int p) {
+		return std::make_pair(f.first, (f.second * p) % MOD);
 	}
 };
 
+#include <unordered_map>
+#include <set>
 #include <iostream>
 using namespace std;
 
 int main() {
 	int N, Q; cin >> N >> Q;
-	
-    int N, Q; cin >> N >> Q;
-	vector<long long> A(N);
+	vector<int64_t> A(N);
 	for(int i = 0; i < N; ++i) cin >> A[i];
-	PersistentLazySegTree<RangeAffineRangeSumMonoid> seg(A);
+	using LazySegTreeType = SparsePersistentLazySegTree<RangeAffineRangeSum<int64_t>, 18>;
+	LazySegTreeType seg(A);
 	
-	unordered_map<int, PersistentLazySegTree<RangeAffineRangeSumMonoid>> segs;
+	unordered_map<int, LazySegTreeType> segs;
 	segs[-1] = seg;
 	for(int i = 0; i < Q; ++i) {
 		int q; cin >> q;
@@ -272,8 +223,7 @@ int main() {
 		}
 		else {
 			int k, l, r; cin >> k >> l >> r;
-			auto [tree, ans] = segs[k].prod(l, r);
-            segs[i] = tree;
+			int64_t ans = segs[k].prod(l, r);
             cout << ans << '\n';
 		}
 	}
