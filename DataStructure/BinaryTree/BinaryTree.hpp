@@ -16,6 +16,14 @@ requires (Node node, typename Node::key_type key_type ) {
 	{ node.update() } -> std::same_as<void>;
 };
 
+template <class Node>
+concept LazyBinaryTreeNodeConcept = BinaryTreeNodeConcept<Node> &&
+requires (Node node, typename Node::lazy_type lazy_type) {
+	{ node.propagate() } -> std::same_as<void>;
+	{ node.map(lazy_type, std::declval<bool>()) } -> std::same_as<void>;
+	{ node.update() } -> std::same_as<void>;
+};
+
 template <class Tree> 
 concept BinaryTreeConcept = requires (
 	typename Tree::key_type key_type,
@@ -74,61 +82,50 @@ struct BinaryTreeMapNode {
 };
 
 template <MapMonoid MM>
-struct LazyReversibleBinaryTreeNode {
-	using node_ptr_type = std::shared_ptr<LazyReversibleBinaryTreeNode>;
-	using data_monoid = MM::data_monoid;
+struct LazyBinaryTreeNode {
+	using node_ptr_type = std::shared_ptr<LazyBinaryTreeNode>;
+	using key_monoid = MM::data_monoid;
 	using lazy_monoid = MM::lazy_monoid;
 	using key_type = MM::data_monoid::value_type;
 	using lazy_type = MM::lazy_monoid::value_type;
-	key_type key, prod;
-	lazy_type lazy;
 	
 	node_ptr_type left, right;
 	int64_t subtree_size;
 	bool rev;
 	
-	constexpr LazyReversibleBinaryTreeNode() : 
-		key(MM::data_monoid::e()), prod(MM::data_monoid::e()), lazy(MM::lazy_monoid::e()), 
-		left(nullptr), right(nullptr), subtree_size(0), rev(false) {}
-	explicit LazyReversibleBinaryTreeNode(const key_type& x) : 
-		key(x), prod(x), lazy(MM::lazy_monoid::e()), 
-		left(nullptr), right(nullptr), subtree_size(1), rev(false) {}
-	~LazyReversibleBinaryTreeNode() = default;
+	key_type key, prod;
+	lazy_type lazy;
 	
-	inline static int64_t size(node_ptr_type node) { return node ? node->subtree_size : 0; }
-	void update() {
-		subtree_size = size(right) + 1 + size(left);
-		prod = key;
-		// ensure both children updated before accessing their data
-		if(left) {
-			left->propagate();
-			left->map();
-			prod = data_monoid::op(prod, left->prod);
-		}
-		if(right) {
-			right->propagate();
-			right->map();
-			prod = data_monoid::op(right->prod, prod);
-		}
-	}
-	void map() {
-		prod = MM::mapping(MM::power(lazy, subtree_size), prod);
-		key = MM::mapping(lazy, key);
-		if(rev) std::swap(left, right);
+	LazyBinaryTreeNode(const key_type& x) : 
+		left(nullptr), right(nullptr), subtree_size(1), rev(false),
+		key(x), prod(x), lazy(MM::lazy_monoid::e()) {}
 		
-		lazy = MM::lazy_monoid::e();
+	void propagate() {
+		if(left) left->map(lazy, rev);
+		if(right) right->map(lazy, rev);
+		this->lazy = MM::lazy_monoid::e();
 		rev = false;
 	}
-	void propagate() {
-		if(left) {
-			left->lazy = lazy_monoid::op(lazy, left->lazy);
-			left->rev = (rev != left->rev); // xor
-		}
-		if(right) {
-			right->lazy = lazy_monoid::op(lazy, right->lazy);
-			right->rev = (rev != right->rev); // xor
-		}
+	
+	void map(const lazy_type& f, bool flip) {
+		key = MM::mapping(f, key);
+		prod = MM::mapping(MM::power(f, subtree_size), prod);
+		if(flip) swap(left, right);
+		lazy = MM::lazy_monoid::op(f, lazy);
+		rev = flip != rev;
 	}
+	
+	void update() {
+		subtree_size = (left ? left->subtree_size : 0) + 1 + (right ? right->subtree_size : 0);
+		prod = key_monoid::op(
+			(left ? left->prod : MM::data_monoid::e()), key_monoid::op(
+				key,
+				(right ? right->prod : MM::data_monoid::e())
+			)
+		);
+	}
+	
+	inline static int64_t size(node_ptr_type node) { return node ? node->subtree_size : 0; }
 };
 
 // BST Data Structures
@@ -286,23 +283,23 @@ public:
 		assert(l < r && 0 <= l && l < size() && 0 < r && r <= size());
 		auto [nl, nm] = Tree::split(root, l);
 		auto [nt, nr] = Tree::split(nm, r-l);
-		nt->rev ^= true;
+		nt->map(node_type::lazy_monoid::e(), true);
 		root = Tree::merge(Tree::merge(nl, nt), nr);
 	}
 	
 	void apply(int64_t l, int64_t r, const lazy_type& f) {
-		if(l == r) return;
-		assert(l < r && 0 <= l && l < size() && 0 < r && r <= size());
+		if(l >= r) return;
+		assert(0 <= l && l < size() && 0 < r && r <= size());
 		
 		auto [nl, nm] = Tree::split(root, l);
 		auto [nt, nr] = Tree::split(nm, r-l);
-		nt->lazy = node_type::lazy_monoid::op(f, nt->lazy);
+		nt->map(f, false);
 		root = Tree::merge(Tree::merge(nl, nt), nr);
 	}
 	
 	key_type prod(int64_t l, int64_t r) {
-		if(l == r) return node_type::data_monoid::e();
-		assert(l < r && 0 <= l && l < size() && 0 < r && r <= size());
+		if(l >= r) return node_type::key_monoid::e();
+		assert(0 <= l && l < size() && 0 < r && r <= size());
 		auto [nl, nm] = Tree::split(root, l);
 		auto [nt, nr] = Tree::split(nm, r-l);
 		auto res = nt->prod;

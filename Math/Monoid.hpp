@@ -78,7 +78,7 @@ struct StringConcatMonoid {
 template <typename T>
 struct AffineMonoid {
 	using value_type = std::pair<T, T>;
-	static value_type e() { return std::make_pair(1, 0); }
+	static value_type e() { return std::make_pair(T(1), T(0)); }
 	static value_type op(const value_type& g, const value_type& f) {
 		return std::make_pair(
 			f.first * g.first, 

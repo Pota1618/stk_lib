@@ -1,5 +1,3 @@
-#pragma once
-
 #include <cstdint>
 #include <cassert>
 #include <numeric>
@@ -16,15 +14,12 @@ private:
 	static constexpr bool is_prime = K_IsPrime32<MOD>;
 public:
 	ModInt() : value(0) {}
-	
-	template<typename T, typename std::enable_if<std::is_integral<T>::value, T>::type* = nullptr>
-	explicit ModInt(T x) : value((x % MOD + MOD) % MOD) {}
+	template <std::integral T> ModInt(T x) : value((x % MOD + MOD) % MOD) {}
 	
 	ModInt(const ModInt& other) : value(other.value) {}
 	ModInt& operator=(const ModInt& other) { value = other.value; return *this; }
 	
-	template<typename T, typename std::enable_if<std::is_integral<T>::value, T>::type* = nullptr>
-	ModInt& operator=(T x) { value = x; return *this; }
+	template<std::integral T> ModInt& operator=(T x) { value = x; return *this; }
 	
 	friend ModInt operator+(const ModInt& lhs, const ModInt& rhs) { return ModInt(lhs) += rhs; }
 	friend ModInt operator-(const ModInt& lhs, const ModInt& rhs) { return ModInt(lhs) -= rhs; }

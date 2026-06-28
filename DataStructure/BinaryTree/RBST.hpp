@@ -88,13 +88,14 @@ public:
 	}
 };
 
-template <BinaryTreeNodeConcept Node>
-class LazyReversibleRandomizedBinarySearchTree {
+template <LazyBinaryTreeNodeConcept Node>
+class LazyRandomizedBinarySearchTree {
 public:
 	using key_type = Node::key_type;
 	using lazy_type = Node::lazy_type;
 	using node_type = Node;
 	using node_ptr_type = std::shared_ptr<node_type>;
+	
 public:
 	static uint64_t xor_shift() {
 		static uint64_t x = 123456789, y = 362436069, z = 521288629, w = 88675123;
@@ -108,26 +109,22 @@ public:
 		
 		if(xor_shift() % (uint64_t)(Node::size(l) + Node::size(r)) < (uint64_t)Node::size(l)) {
 			l->propagate();
-			l->map();
 			l->right = merge(l->right, r);
 			l->update();
 			return l;
 		}
 		else {
 			r->propagate();
-			r->map();
 			r->left = merge(l, r->left);
 			r->update();
 			return r;
 		}
 	}
 	
+	// split tree into [k elements] and [(size(tree) - k) elements]
 	static std::pair<node_ptr_type, node_ptr_type> split(node_ptr_type tree, int64_t k) {
 		if(tree == nullptr) return std::make_pair(nullptr, nullptr);
-		
 		tree->propagate();
-		tree->map();
-		
 		if(k <= Node::size(tree->left)) {
 			// 左のノードからから k 個切り離す
 			auto p = split(tree->left, k);
@@ -168,19 +165,14 @@ public:
 	static node_ptr_type get(node_ptr_type t, int64_t k) {
 		if(t == nullptr) return t;
 		t->propagate();
-		t->map();
 		int64_t sz = Node::size(t->left);
 		
-		node_ptr_type res = nullptr;
-		if(sz > k) res = get(t->left, k);
-		else if(sz < k) res = get(t->right, k - sz - 1);
-		else res = t;
-		
-		t->update();
-		return res;
+		if(sz > k) return get(t->left, k);
+		else if(sz < k) return get(t->right, k - sz - 1);
+		else return t;
 	}
 };
 
 template <typename T> using RBSTSet = BinaryTreeSet<RandomizedBinarySearchTree<BinaryTreeNodeBase<T>>>;
 template <typename K, typename V> using RBSTMap = BinaryTreeMap<RandomizedBinarySearchTree<BinaryTreeMapNode<K, V>>>;
-template <MapMonoid MM> using RBSTArray = BinaryTreeArray<LazyReversibleRandomizedBinarySearchTree<LazyReversibleBinaryTreeNode<MM>>>;
+template <MapMonoid MM> using RBSTArray = BinaryTreeArray<LazyRandomizedBinarySearchTree<LazyBinaryTreeNode<MM>>>;
