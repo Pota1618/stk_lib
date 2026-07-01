@@ -27,7 +27,7 @@ private:
 	
 public:
 	SparseLazySegTree() : root(std::make_shared<Node>()) {}
-	SparseLazySegTree(const std::vector<data_type>& vec) : root(std::make_shared<Node>()) {
+	explicit SparseLazySegTree(const std::vector<data_type>& vec) : root(std::make_shared<Node>()) {
 		build(root, vec, 0, 1ull << D);
 	}
 	

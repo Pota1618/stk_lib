@@ -96,7 +96,7 @@ struct LazyBinaryTreeNode {
 	key_type key, prod;
 	lazy_type lazy;
 	
-	LazyBinaryTreeNode(const key_type& x) : 
+	explicit LazyBinaryTreeNode(const key_type& x) : 
 		left(nullptr), right(nullptr), subtree_size(1), rev(false),
 		key(x), prod(x), lazy(MM::lazy_monoid::e()) {}
 		
